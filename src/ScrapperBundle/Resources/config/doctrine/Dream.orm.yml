@@ -1,0 +1,16 @@
+ScrapperBundle\Entity\Dream:
+    type: entity
+    table: null
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        word:
+            type: string
+            length: 255
+        meaning:
+            type: text
+    lifecycleCallbacks: {  }

@@ -2,8 +2,10 @@
 
 namespace ScrapperBundle\Controller;
 
+use Doctrine\ORM\EntityManager;
 use Goutte\Client;
 use Monolog\Logger;
+use ScrapperBundle\Entity\Dream;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -17,9 +19,12 @@ class DefaultController extends Controller
     private $logger;
     /** @var array */
     private $context = ['scrapper'];
+    /** @var EntityManager */
+    private $em;
 
     public function indexAction()
     {
+        $this->em = $this->getDoctrine()->getManager();
         $this->logger = $this->get('logger');
         $this->parsePage();
         return $this->render('ScrapperBundle:Default:index.html.twig');
@@ -73,10 +78,9 @@ class DefaultController extends Controller
         return function (Crawler $node) {
             $this->logger->info('Parsing meaning', $this->context);
             $content = $this->getContent($node);
+
             if (preg_match('#\<b\>(.*?)\<\/b\>#', $content, $matches)) {
-                // @TODO: realize with db
-                $word = $matches[1];
-                $html = $content;
+                $this->saveEntity($matches[1], $content);
             } else {
                 $this->logger->error('Parse failure: didn\'t found the word', $this->context);
             }
@@ -112,5 +116,17 @@ class DefaultController extends Controller
             }
         }
         return $content;
+    }
+
+    /**
+     * @param string $matches
+     * @param string $content
+     */
+    private function saveEntity($matches, $content)
+    {
+        $entity = new Dream();
+        $entity->setWord($matches)->setMeaning($content);
+        $this->em->persist($entity);
+        $this->em->flush();
     }
 }
